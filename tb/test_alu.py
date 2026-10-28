@@ -35,7 +35,7 @@ from cocotb.queue import Queue
 from cocotb.triggers import FallingEdge
 
 # Your model from step 1. Not a copy: the same file, imported.
-from alu_model import alu, AluResult, OP_NAMES, ADD, SUB, AND, OR, XOR, NOT, SHL, SHR
+from model.alu_model import alu, AluResult, OP_NAMES, ADD, SUB, AND, OR, XOR, NOT, SHL, SHR
 
 LATENCY = 2          # rising edges from inputs to outputs, from the spec
 N_RANDOM = 500       # how many random transactions test_random sends
