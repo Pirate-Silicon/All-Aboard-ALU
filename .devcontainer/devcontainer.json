@@ -1,0 +1,47 @@
+// The development container: one Linux machine, with every tool this program
+// uses already installed. VS Code reads this file when you choose
+// "Reopen in Container". See guides/setup.md.
+{
+  "name": "All-Aboard-ALU",
+
+  // IIC-OSIC-TOOLS, from Johannes Kepler University Linz. Pinned to one
+  // release so the tools can't change under you partway through.
+  "image": "hpretl/iic-osic-tools-devcontainer:2026.10",
+
+  // Keep the image's own startup script: it runs the desktop in a browser
+  // tab, which is where GUI tools (KLayout, OpenROAD) appear.
+  "overrideCommand": false,
+
+  "containerEnv": {
+    // The image supports several manufacturing processes. We use sky130.
+    "PDK": "sky130A",
+    // The typical-corner sky130 cell library, used in steps 4 and 5.
+    "LIB_TT": "/foss/pdks/sky130A/libs.ref/sky130_fd_sc_hd/lib/sky130_fd_sc_hd__tt_025C_1v80.lib"
+  },
+
+  // Set only for VS Code's terminals, not for the container itself. If the
+  // container's startup script saw DISPLAY, it would look for a screen
+  // outside the container instead of starting its own browser desktop.
+  "remoteEnv": {
+    // Where GUI windows go: the browser desktop.
+    "DISPLAY": ":1"
+  },
+
+  "forwardPorts": [80],
+  "portsAttributes": {
+    "80": {
+      "label": "Desktop (GUI tools)",
+      "onAutoForward": "silent"
+    }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "lramseyer.vaporview",
+        "mshr-h.veriloghdl",
+        "ms-python.python"
+      ]
+    }
+  }
+}

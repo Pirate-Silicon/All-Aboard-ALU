@@ -1,0 +1,34 @@
+# Maintainer-only solutions. Never commit these to the public repo.
+reference/
+
+# Python
+__pycache__/
+*.pyc
+
+# Simulation output
+sim_build/
+obj_dir/
+results.xml
+*.vcd
+*.fst
+*.ghw
+
+# Synthesis and timing output (step 5)
+step5-synthesis/alu_synth.v
+step5-synthesis/*.log
+step5-synthesis/*.dot
+step5-synthesis/*.png
+step5-synthesis/*.svg
+
+# LibreLane run directories (steps 6 and 7)
+runs/
+
+# Editors and OS
+.vscode/settings.json
+.DS_Store
+Thumbs.db
+
+
+*.txt
+
+tools/*
