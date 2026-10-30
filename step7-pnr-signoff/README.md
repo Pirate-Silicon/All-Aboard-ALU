@@ -245,10 +245,27 @@ librelane --manual-pdk --run-tag full --overwrite config.json
 `--overwrite` replaces the previous run with the same tag. `chmod +x run`,
 then `./run`.
 
+### 9. Draw your chip
+
+KLayout is for exploring. For a picture to show people, this folder has
+`gds2png.py`, which draws your GDS the same way Tiny Tapeout's tools draw
+every project on their chips:
+
+```bash
+python3 gds2png.py runs/full/final/gds/alu.gds alu.png
+```
+
+Open `alu.png` in VS Code. Each layer gets its own colour, drawn
+see-through, so you can see what's stacked on what. Find the rows of cells,
+the power rails between them, and your pins on the edges.
+
+That's your ALU: the spec from step 1, the model, the RTL, the testbench, the
+timing, all of it, as a picture of something a factory could build.
+
 ## Check yourself
 
 - Your run says Passed for antenna, LVS, and DRC.
-- `runs/full/final/gds/alu.gds` exists, and you've looked at it.
+- `runs/full/final/gds/alu.gds` exists, you've looked at it, and you have `alu.png`.
 - You filled in the timing table, and can say what changed between each column.
 - You can say why setup and hold are worst at different corners.
 - You've seen at least one failing run, and know where in the run folder to look to find out why.

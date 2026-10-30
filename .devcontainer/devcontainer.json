@@ -27,6 +27,10 @@
     "DISPLAY": ":1"
   },
 
+  // The one tool the image doesn't have: gdstk, which step 7's gds2png.py
+  // uses to draw your chip. Pinned, like the image.
+  "postCreateCommand": "pip install --user gdstk==1.0.2",
+
   "forwardPorts": [80],
   "portsAttributes": {
     "80": {
