@@ -61,6 +61,11 @@ Passed ✅
 ... INFO     Flow complete.
 ```
 
+On the way it prints hundreds of `WARNING` lines. They're the same library
+warnings you saw in step 6, printed again by every step that checks timing,
+once for each of the nine corners you'll meet in part 4. A warning doesn't
+stop the flow. An `ERROR` does.
+
 If any of the three says Failed, or the flow stops with an `ERROR`, read the
 **Stuck?** table below before changing anything.
 

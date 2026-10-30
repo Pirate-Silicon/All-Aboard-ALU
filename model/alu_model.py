@@ -28,11 +28,18 @@ class AluResult:
     c: int   # carry out of the adder (ADD and SUB only)
     v: int   # signed overflow (ADD and SUB only)
 
+    # What print() shows for a result, like "y= 7 n=0 z=0 c=0 v=0". In step 3,
+    # the testbench stores an output it couldn't read (an X) as None.
+    def __str__(self):
+        def show(x):
+            return "X" if x is None else x   # "A if condition else B" is a one-line if/else
+        return f"y={show(self.y):>2} n={show(self.n)} z={show(self.z)} c={show(self.c)} v={show(self.v)}"
+
 
 # Given. Handy for thinking and for debugging; you don't have to use it
 def to_signed(x):
     """Read a 4-bit pattern as two's complement: 0b1111 -> -1, 0b0111 -> 7."""
-    return x - (1 << WIDTH) if x & SIGN else x
+    return x - (1 << WIDTH) if x & SIGN else x   # one-line if/else: subtract 16 only if the sign bit is set
   
 
 def alu(op, a, b):

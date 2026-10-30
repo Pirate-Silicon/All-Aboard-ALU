@@ -123,58 +123,107 @@ tell you if you were right.
 In the container's terminal:
 
 ```bash
-less $LIB_TT
+less -p __inv_1 $LIB_TT
 ```
 
-`$LIB_TT` is set up by the container to point at the typical-corner library.
-It's a 12 MB text file. In `less`, type `/` followed by text to search, and
-`n` for the next match. `q` quits.
+`$LIB_TT` is set up by the container to point at the typical-corner library:
+one 12 MB text file describing every cell, one after another. `-p __inv_1`
+opens it right where that text first appears, which is the start of
+`sky130_fd_sc_hd__inv_1`, the smallest inverter. Press the space bar to scroll
+down a page, `b` to go back up, and `q` to quit.
 
-Search for `cell ("sky130_fd_sc_hd__inv_1")`. This is the smallest inverter
-in the library. Write down:
+The inverter's entry is about 140 lines long. Here it is with most of it cut
+out, and the parts worth knowing labeled:
 
-- its `area` (in µm²)
-- its `cell_leakage_power` (the units are given near the top of the file: search `leakage_power_unit`)
-- the `capacitance` of its input pin `A` (units: `capacitive_load_unit`)
-- one number out of its `cell_rise` table, and what the table's two axes are. Search the file for the table's template name (it says `del_1_7_7`) to find out what `variable_1` and `variable_2` mean.
+```
+cell ("sky130_fd_sc_hd__inv_1") {
+    ...
+    area : 3.7536000000;               <- silicon it takes up, in µm²
+    ...
+    pin ("A") {
+        capacitance : 0.0023020000;    <- load A puts on whatever drives it, in pF
+        direction : "input";
+        ...
+    }
+    pin ("Y") {
+        direction : "output";
+        function : "(!A)";             <- what the gate does: Y = NOT A
+        internal_power () {            <- power tables. They look like delay
+            ...                           tables, but they aren't: keep scrolling.
+        }
+        ...
+        timing () {
+            cell_fall ("del_1_7_7") {  <- delay when Y falls
+                ...
+            }
+            cell_rise ("del_1_7_7") {  <- delay when Y rises
+                index_1("0.0100000000, ... 1.5000000000");   <- 7 input transitions, ns
+                index_2("0.0005000000, ... 0.1812840000");   <- 7 output loads, pF
+                values("0.0203433000, ... 1.0383745000", \   <- 7 rows of 7 delays, ns
+                    ...
+                    "0.1833476000, ... 1.6968695000");
+```
 
-Then look up three more:
-
-- **`sky130_fd_sc_hd__dfxtp_1`**, the plain D flip-flop. How much bigger is it than the inverter? Find its clock-to-Q delay (the `cell_rise` under pin `Q`) and its setup time (under pin `D`, the timing block with `timing_type : "setup_rising"`).
-- **`sky130_fd_sc_hd__maj3_1`**, a 3-input majority gate. Its output is 1 when at least two inputs are 1. That's exactly the carry out of a full adder, which is why synthesis uses it.
-- **`sky130_fd_sc_hd__xor2_1`**, the XOR gate. Compare its delay to the inverter's.
+Scroll through the real thing and find each labeled line. Then look at the
+`cell_rise` table. Each row of `values` is one input transition, and each
+column is one output load. The very first number is the fastest input into
+the lightest load, and the very last is the slowest input into the heaviest.
+How far apart are they?
 
 <details>
 <summary>What you should have found</summary>
 
-- `inv_1`: area 3.7536 µm², leakage about 0.0053 nW, input capacitance about 0.0023 pF.
-- The delay table axes: `variable_1` is **`input_net_transition`** (ns) and `variable_2` is **`total_output_net_capacitance`** (pF). The very first entry, for the fastest input into the lightest load, is about 0.020 ns (20 ps). The last, for the slowest input into the heaviest load, is over 1 ns. Same gate, 50 times slower.
-- `dfxtp_1`: area 20.02 µm², more than five inverters. Clock-to-Q is roughly 0.27–0.45 ns for realistic loads.
-- `maj3_1`: about 0.11 ns at the lightest load, and over 1 ns at the heaviest. At any given load it's much slower than an inverter, and a 4-bit carry chain can have several of them in a row.
-- `xor2_1`: noticeably slower than the inverter, and more than twice its area.
+The first is 0.020 ns (20 ps), and the last is 1.70 ns. Same gate, more than
+80 times slower. That's why delay is a table and not one number, and why a
+timing tool has to know what every gate is driving.
 
 </details>
 
-The `.lib` is what synthesis and timing tools read. Place and route needs a
-different view of the same cells, their **physical** shape, which lives in a
-LEF file:
+Every other cell is stored the same way. Rather than dig through each one,
+here are the numbers for the gates your ALU is likely to use. Each delay was
+read off that gate's own table at one realistic spot for a small design like
+ours: an input transition of 0.1 ns, driving 0.005 pF (about two gate inputs).
+For gates with more than one input, it's the slowest input, and the slower of
+rising and falling.
 
-```bash
-less $PDKPATH/libs.ref/sky130_fd_sc_hd/lef/sky130_fd_sc_hd.lef
-```
+| Cell      | What it does                                         | Size (µm)   | Area (µm²) | Delay (ns) |
+| --------- | ---------------------------------------------------- | ----------- | ---------- | ---------- |
+| `inv_1`   | NOT                                                  | 1.38 × 2.72 | 3.75       | 0.08       |
+| `nand2_1` | NAND, 2 inputs                                       | 1.38 × 2.72 | 3.75       | 0.10       |
+| `nor2_1`  | NOR, 2 inputs                                        | 1.38 × 2.72 | 3.75       | 0.14       |
+| `and2_1`  | AND, 2 inputs                                        | 2.30 × 2.72 | 6.26       | 0.19       |
+| `or2_1`   | OR, 2 inputs                                         | 2.30 × 2.72 | 6.26       | 0.25       |
+| `xor2_1`  | XOR, 2 inputs                                        | 3.22 × 2.72 | 8.76       | 0.19       |
+| `a21oi_1` | AND-OR-invert: NOT((A1 AND A2) OR B1)                | 1.84 × 2.72 | 5.00       | 0.19       |
+| `mux2_1`  | 2-to-1 mux: `S` picks `A0` or `A1`                   | 4.14 × 2.72 | 11.26      | 0.34       |
+| `maj3_1`  | 1 when at least two of its three inputs are 1        | 3.68 × 2.72 | 10.01      | 0.38       |
 
-Search `/MACRO sky130_fd_sc_hd__inv_1`. Its `SIZE` line says how big it is,
-and its `PIN` blocks say where the router may connect. Then look at the
-flip-flop's `SIZE`. Notice anything about the second number?
+`maj3` is exactly the carry out of a full adder, which is why synthesis uses
+it, and why a ripple-carry adder is slow: the carry passes through one per
+bit. Notice too that the NAND is faster and smaller than the AND. In CMOS, the
+gate that comes naturally inverts, so an AND is really a NAND with an inverter
+after it. That's why synthesis likes inverting gates like `a21oi`.
+
+The flip-flop, `dfxtp_1`, sits at both ends of every path:
+
+- **Size:** 7.36 × 2.72 µm, 20.02 µm². That's more than five inverters.
+- **Clock-to-Q** (t<sub>pcq</sub>): 0.34 ns.
+- **Setup time** (t<sub>setup</sub>): 0.14 ns.
+
+Look down the Size column, and at the flip-flop's. Notice anything about the
+second number?
 
 <details>
 <summary>The second number</summary>
 
-Both are 2.72 µm tall: the inverter is 1.38 × 2.72, and the flip-flop is
-7.36 × 2.72. **Every standard cell in the library is the same height.** That's
-what lets placement pack them into rows like bricks, and it's why the power
-rails can run straight along the top and bottom of every row. Step 6 shows you
-those rows.
+It's always 2.72 µm. **Every standard cell in the library is the same
+height.** That's what lets placement pack them into rows like bricks, and it's
+why the power rails can run straight along the top and bottom of every row.
+Step 6 shows you those rows.
+
+The sizes come from a second file, the LEF, which describes each cell's
+physical shape for place and route. The `.lib` you just read is for synthesis
+and timing.
 
 </details>
 
@@ -197,21 +246,18 @@ names and colors. Without them, every layer shows up as a bare number.
 
 What you're looking at is two transistors, plus the wiring to reach them:
 
-```
- ┌──────────────────────┐
- │█████ VPWR rail ██████│  power, along the top edge
- │ ░░░░ n-well ░░░░░░░░ │  the region the PMOS transistor sits in
- │   ▓▓▓  ║  ▓▓▓       │  PMOS: diffusion with the gate across it
- │        ║  <- poly    │  one vertical stripe: the GATE of both
- │   ▓▓▓  ║  ▓▓▓       │  NMOS: diffusion with the gate across it
- │█████ VGND rail ██████│  ground, along the bottom edge
- └──────────────────────┘
-```
+![The inverter cell in KLayout: two bright green diffusion rectangles, one above the other, crossed by a single red poly stripe, with blue power rails along the top and bottom and a pink outline around the cell](inv_1.png)
 
-- **The vertical stripe down the middle** is polysilicon (`poly`): the gate. Where it crosses a diffusion region (`diff` or `tap`), there's a transistor. It crosses two, so there are two transistors, and one input drives both of them.
-- **The top one sits in the n-well** (`nwell`): that's the PMOS. The bottom one is the NMOS.
-- **Small squares** are contacts, connecting diffusion and poly up to the wiring layers.
-- **The horizontal bars along the top and bottom** are the power rails, VPWR and VGND.
+- **The red striped stripe running top to bottom** is polysilicon (`poly`): the gate. Where it crosses one of the bright green rectangles, which are diffusion (`diff`), there's a transistor. It crosses two, so there are two transistors, and one input drives both of them. Partway down, the poly bends left to a contact: that's where the input, `A`, comes in.
+- **The top transistor sits in the n-well** (`nwell`), the box with a dotted green outline that sticks out past both sides of the cell. That makes it the PMOS. The bottom one is the NMOS.
+- **Small cross-hatched squares** are contacts, connecting diffusion and poly up to the wiring layers.
+- **The beige strip on the right, between the transistors,** is the output, `Y`. It's on `li1`, the lowest wiring layer, and it joins the right-hand sides of both transistors.
+- **The blue striped bars along the top and bottom** are the power rails, VPWR and VGND.
+- **The pink box** is the cell's outline: 1.38 × 2.72 µm, the size from the table in part 3.
+
+Everything else (the white crosses, the speckled backgrounds, the thin lines
+across the middle) is extra layers that tell the factory how to treat the
+silicon. You can ignore them.
 
 Input high turns the NMOS on and the PMOS off, pulling the output down to
 ground. Input low does the opposite. That's an inverter, and it's the whole
@@ -224,9 +270,10 @@ your own chip in step 7.
 
 ### 5. Estimate F<sub>max</sub>
 
-Go back to your predicted path from part 2. List the gates along it, guess a
-delay for each from what you found in the library (use numbers from the
-middle of the tables, not the corners), and add them up:
+Go back to your predicted path from part 2. List the gates along it, look up
+each one's delay in the table from part 3 (if a gate isn't there, use the
+closest one), and add them up. t<sub>pcq</sub> and t<sub>setup</sub> are the
+flip-flop's:
 
 **T<sub>min</sub> = t<sub>pcq</sub> + (sum of gate delays) + t<sub>setup</sub>**
 
@@ -283,7 +330,8 @@ of setup time: an F<sub>max</sub> of roughly 560 MHz.
 | What you see                                              | What's wrong                                                                                         |
 | --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | `less: $LIB_TT: No such file` or `less` opens nothing     | You're in a terminal outside the container, or an old one. Open a new terminal in VS Code.           |
-| Searching `cell ("sky130_fd_sc_hd__inv_1")` finds nothing | Type it exactly, including the quotes and parentheses. Or search a shorter piece: `/inv_1"`.         |
+| `Pattern not found` when `less` opens                     | Check the spelling: `__inv_1` starts with two underscores.                                           |
+| `Invalid pattern` when you search inside `less`           | `less` treats `(` and `)` as special. Search for a piece without them, like `__inv_1`.               |
 | `klayout: cannot connect to X server`                     | Run `echo $DISPLAY`; it should say `:1`. Open a new terminal.                                        |
 | KLayout opens but the window is empty                     | You haven't picked a cell yet. Right-click `sky130_fd_sc_hd__inv_1` > Show As New Top, then press F. |
 | Layers show as numbers like `64/20`                       | You opened the GDS without `-nn` and `-l`. Close KLayout and use the full command above.             |

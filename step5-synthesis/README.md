@@ -147,7 +147,8 @@ less alu_synth.v
 ```
 
 It's your ALU as about a hundred instances of sky130 cells. Pick a cell name
-and look it up in the library (`less $LIB_TT`, then search for it).
+and look it up in the library, the same way you found the inverter in step 4.
+For `sky130_fd_sc_hd__a21oi_1`, that's `less -p __a21oi_1 $LIB_TT`.
 
 ## Part C: Time it
 

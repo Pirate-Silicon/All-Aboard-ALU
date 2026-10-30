@@ -41,7 +41,13 @@
         "lramseyer.vaporview",
         "mshr-h.veriloghdl",
         "ms-python.python"
-      ]
+      ],
+      "settings": {
+        // The testbench imports your step 1 model as `alu_model`. tb/Makefile
+        // tells Python where to find it; this tells VS Code, so the import
+        // isn't underlined in red.
+        "python.analysis.extraPaths": ["model"]
+      }
     }
   }
 }

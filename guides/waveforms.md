@@ -57,6 +57,17 @@ rising edge, look at what the inputs were just _before_ it, and look at what
 the registers became just _after_ it. That's one clock cycle of your design,
 exactly as the timing table in [SPEC.md](../step1-spec/SPEC.md) describes.
 
+Here's the start of `make smoke WAVES=1`, the first ADD:
+
+![Surfer showing clk, the ALU's input a, and a, b, and sum inside core](waveform.png)
+
+- `alu.a` is the input pin. The testbench sets it to 3 at a _falling_ edge (25 ns), half a cycle away from when the design looks.
+- `core.a` is the input register. It picks up the 3 at the next _rising_ edge (30 ns), and `b` (also inside `core`) picks up its 4 at the same moment.
+- `sum` has no clock of its own. It's plain logic, so it changes the instant `core.a` and `b` do: 3 + 4 = 7.
+- The red line is the cursor. The column beside the names shows each signal's value there.
+
+Values are in hex by default, which is why `sum` shows as `07`.
+
 Red, or a value shown as `x`, means **X**: unknown. Either nothing is driving
 that signal, or it's a register that was never reset. After reset, nothing
 in this design should ever be X.

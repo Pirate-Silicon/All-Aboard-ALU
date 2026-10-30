@@ -135,6 +135,17 @@ librelane --manual-pdk --run-tag place --to OpenROAD.DetailedPlacement config.js
 It takes about 30 seconds and prints a lot. The last lines should say
 **Flow complete**.
 
+Just before that, there's a block of warnings. They're normal. Most are
+about sky130's I/O pad libraries, which LibreLane loads even though your
+design doesn't use them. `found 2 floating nets` means `VPWR` and `VGND`:
+nothing inside the chip drives power and ground, because they come in from
+outside. If that number is bigger than 2, the extras are wires in your
+design that nothing drives. This lists them:
+
+```bash
+grep -A5 RSZ-0020 runs/place/*/*.log
+```
+
 Now look at what it made:
 
 ```bash
@@ -149,11 +160,16 @@ number at the front may differ). It's the same `stat` table you made in step 5. 
 ### 5. Look at it
 
 Open the container's desktop in your browser
-([setup](../guides/setup.md), section 5), then:
+([setup](../guides/setup.md), section 5). Then, back in the **VS Code**
+terminal and still in `step6-floorplan`, run:
 
 ```bash
 librelane --manual-pdk --last-run --flow OpenInOpenROAD config.json
 ```
+
+Run it from VS Code, not from a terminal on the desktop. A desktop terminal
+starts in `/foss/designs`, which isn't your repo, so it can't find
+`config.json`.
 
 The **OpenROAD GUI** opens on the desktop with your placed design. Maximize
 the window: the layout view is on the right. Then explore:
@@ -224,6 +240,7 @@ Put `FP_CORE_UTIL` back to what you want to use for step 7.
 | ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | `Error: ... is not valid JSON` or `Expecting ',' delimiter` | A JSON typo: a missing comma, an extra comma after the last entry, or single quotes instead of double.                                       |
 | `Unknown variable` or a warning about a variable name       | A misspelled key. Check it against the table above.                                                                                          |
+| `Path 'config.json' does not exist`                         | You're in the wrong folder. In the VS Code terminal, `cd` into `step6-floorplan` and run it again.                                           |
 | It tries to download a PDK, or complains about `ciel`       | You left out `--manual-pdk`.                                                                                                                 |
 | `[ERROR] ... pin ... not found` in IO placement             | A pin name in `pin_order.cfg` doesn't match your RTL. Buses need `.*`, like `a.*`.                                                           |
 | The GUI doesn't appear                                      | Is the desktop open in your browser? Run `echo $DISPLAY`; it should say `:1`.                                                                |

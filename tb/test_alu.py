@@ -35,7 +35,7 @@ from cocotb.queue import Queue
 from cocotb.triggers import FallingEdge
 
 # Your model from step 1. Not a copy: the same file, imported.
-from model.alu_model import alu, AluResult, OP_NAMES, ADD, SUB, AND, OR, XOR, NOT, SHL, SHR
+from alu_model import alu, AluResult, OP_NAMES, ADD, SUB, AND, OR, XOR, NOT, SHL, SHR
 
 LATENCY = 2          # rising edges from inputs to outputs, from the spec
 N_RANDOM = 500       # how many random transactions test_random sends
@@ -180,17 +180,11 @@ class Scoreboard:
         #   2. Add 1 to self.n_checked. Every time.
         #   3. If got != expected, add 1 to self.errors, and print enough to
         #      debug from. "MISMATCH" tells you nothing. Print the check
-        #      number, the transaction (print(txn) works, see __str__ above),
-        #      what was expected, and what came back. Use fmt() below.
+        #      number, the transaction, what was expected, and what came
+        #      back. print() works on all three: see __str__ in AluTxn above,
+        #      and in AluResult in alu_model.py.
         #      Only print the first MAX_PRINTED, or one bug buries you.
         pass
-
-
-def fmt(r):
-    """One AluResult as a short readable string, with X for undriven bits. Given."""
-    def show(x, width=1):
-        return "X".rjust(width) if x is None else str(x).rjust(width)
-    return f"y={show(r.y, 2)} n={show(r.n)} z={show(r.z)} c={show(r.c)} v={show(r.v)}"
 
 
 #=========================================================================
